@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Home, ArrowLeft, Search } from 'lucide-react'
-import NotFoundSvg from '@/assets/404notfound.svg'
+import NotFoundSvg from '@/assets/images/404notfound.svg'
 
 export default function NotFound() {
   const router = useRouter()
