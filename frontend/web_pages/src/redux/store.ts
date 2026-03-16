@@ -1,11 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit'
 import authSlice from './slices/auth/authSlice';
-import vehicleSlice from './slices/vehicles/vehicleSlice';
 export const makeStore = () => {
   return configureStore({
     reducer: {
         auth: authSlice,
-        vehicles: vehicleSlice,
     },
   })
 }
