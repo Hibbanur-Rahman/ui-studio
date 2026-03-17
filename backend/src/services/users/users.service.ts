@@ -1,10 +1,6 @@
 import httpStatusConstant from "../../constant/httpStatus.constant";
-import UserModel, { IUser } from "../../models/users/user.model";
+import UserModel from "../../models/user/user.model";
 import { UploadToCloudinary } from "../../config/cloudinary.config";
-import OTP from "../../models/otp/otp.model";
-import { sendSMS } from "../sms.service/sms.processor";
-import { generateOTP } from "../../utils/getRandom.utils";
-import WalletService from "../wallet/wallet.service";
 
 interface GetUsersPayload {
   status: "all" | "active" | "inactive" | "visitors";
@@ -33,50 +29,15 @@ const GetUserById = async (userId: string) => {
         },
       };
     }
-
-    // Normalize verificationStatus (ensure strings) and calculate KYC verification percentage
-    const rawVerificationStatus: any = (user as any).verificationStatus || {};
-
-    const verificationStatus = {
-      personalInfoStatus: rawVerificationStatus.personalInfoStatus || "NOT_UPLOADED",
-      aadharVerificationStatus: rawVerificationStatus.aadharVerificationStatus || "NOT_UPLOADED",
-      panVerificationStatus: rawVerificationStatus.panVerificationStatus || "NOT_UPLOADED",
-      dlVerificationStatus: rawVerificationStatus.dlVerificationStatus || "NOT_UPLOADED",
-      bankVerificationStatus: rawVerificationStatus.bankVerificationStatus || "NOT_UPLOADED",
-      overallStatus: rawVerificationStatus.overallStatus || "NOT_UPLOADED",
-    };
-
-    const kycSteps = [
-      verificationStatus.personalInfoStatus,
-      verificationStatus.aadharVerificationStatus,
-      verificationStatus.panVerificationStatus,
-      verificationStatus.dlVerificationStatus,
-      verificationStatus.bankVerificationStatus,
-    ];
-
-    const totalSteps = kycSteps.length;
-    const completedSteps = kycSteps.filter((step) => step === "VERIFIED").length;
-
-    const kycVerificationPercentage =
-      totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
-
     const responseData = {
       ...user,
-      verificationStatus: {
-        ...verificationStatus,
-        overallStatus: verificationStatus.overallStatus === "VERIFIED" ? "Verified" : "Unverified"
-      },
-      kycVerificationPercentage,
     };
 
     return {
       success: true,
       status: httpStatusConstant.OK,
       response: {
-        message:
-          verificationStatus.overallStatus === "NOT_UPLOADED"
-            ? "All Documents Not Uploaded"
-            : "User profile fetched successfully",
+        message:"User profile fetched successfully",
         data: responseData,
       },
     };
@@ -354,11 +315,6 @@ const UpdateUserStatus = async (
       )
       .lean();
 
-    if (updatedUser) {
-      (updatedUser as any).verificationStatus = {
-        overallStatus: updatedUser.verificationStatus?.overallStatus === "VERIFIED" ? "Verified" : "Unverified"
-      };
-    }
 
     return {
       success: true,
@@ -467,27 +423,7 @@ const UpdateUserProfile = async (userId: string, payload: UpdateUserProfilePaylo
     if (payload.isActive !== undefined) {
       updateData.isActive = payload.isActive;
     }
-    if (payload.currentEarning !== undefined) {
-      updateData.currentEarning = payload.currentEarning;
-    }
-    if (payload.city !== undefined) {
-      updateData.city = payload.city;
-    }
-    if (payload.pinCode !== undefined) {
-      updateData.pinCode = payload.pinCode;
-    }
-    if (payload.houseNo !== undefined) {
-      updateData.houseNo = payload.houseNo;
-    }
-    if (payload.street !== undefined) {
-      updateData.street = payload.street;
-    }
-    if (payload.landmark !== undefined) {
-      updateData.landmark = payload.landmark;
-    }
-    if (payload.fatherName !== undefined) {
-      updateData.fatherName = payload.fatherName;
-    }
+    
     if (payload.dateOfBirth !== undefined) {
       // Accept ISO date string and convert to Date
       const dobDate = payload.dateOfBirth ? new Date(payload.dateOfBirth) : undefined;
@@ -559,11 +495,7 @@ const UpdateUserProfile = async (userId: string, payload: UpdateUserProfilePaylo
       )
       .lean();
 
-    if (updatedUser) {
-      (updatedUser as any).verificationStatus = {
-        overallStatus: updatedUser.verificationStatus?.overallStatus === "VERIFIED" ? "Verified" : "Unverified"
-      };
-    }
+
 
     return {
       success: true,
@@ -592,104 +524,6 @@ interface UpdateNomineePayload {
   phoneNumber?: string;
   isVerified?: boolean;
 }
-
-const UpdateNomineeDetails = async (userId: string, payload: UpdateNomineePayload) => {
-  try {
-
-
-    // First, check if user exists (using custom userId field, not MongoDB _id)
-    const existingUser = await UserModel.findOne({ userId: userId });
-    if (!existingUser) {
-      return {
-        success: false,
-        status: httpStatusConstant.NOT_FOUND,
-        response: {
-          message: "User not found",
-        },
-      };
-    }
-
-    const updateData: Record<string, unknown> = {};
-
-    if (payload.name !== undefined) {
-      updateData["nominee.name"] = payload.name;
-    }
-    if (payload.relation !== undefined) {
-      updateData["nominee.relation"] = payload.relation;
-    }
-
-    // Handle explicit verification status change FIRST
-    // This ensures that if admin sets it explicitly, it won't be overridden
-    const explicitVerificationSet = payload.isVerified !== undefined;
-    if (explicitVerificationSet) {
-      updateData["nominee.isVerified"] = payload.isVerified;
-    }
-
-    if (payload.phoneNumber !== undefined) {
-      // Ensure phone has +91 prefix
-      const phoneToUpdate = payload.phoneNumber.startsWith("+91")
-        ? payload.phoneNumber
-        : `+91${payload.phoneNumber}`;
-      updateData["nominee.phoneNumber"] = phoneToUpdate;
-
-      // Only reset verification if isVerified was NOT explicitly set in payload
-      if (!explicitVerificationSet) {
-        updateData["nominee.isVerified"] = false;
-      }
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return {
-        success: false,
-        status: httpStatusConstant.BAD_REQUEST,
-        response: {
-          message: "No fields to update",
-        },
-      };
-    }
-
-
-
-    const updatedUser = await UserModel.findOneAndUpdate(
-      { userId: userId },
-      updateData,
-      { new: true }
-    )
-      .select(
-        "_id userId username nominee"
-      )
-      .lean();
-
-    if (!updatedUser) {
-      return {
-        success: false,
-        status: httpStatusConstant.NOT_FOUND,
-        response: {
-          message: "User not found",
-        },
-      };
-    }
-
-    return {
-      success: true,
-      status: httpStatusConstant.OK,
-      response: {
-        message: "Nominee details updated successfully",
-        data: updatedUser,
-      },
-    };
-  } catch (error: any) {
-    console.log("error while updating nominee details:", error);
-    return {
-      success: false,
-      status: httpStatusConstant.INTERNAL_SERVER_ERROR,
-      response: {
-        message: "Failed to update nominee details",
-        error: error?.message || error,
-      },
-    };
-  }
-};
 
 // Add new user
 const AddUser = async (userData: any) => {
@@ -781,9 +615,6 @@ const AddUser = async (userData: any) => {
 
     await newUser.save();
 
-    // Create wallet for the new user
-    await WalletService.CreateWallet(newUser.userId);
-
     // Return user data without password
     const userResponse = await UserModel.findById(newUser._id).select('-password').lean();
 
@@ -808,372 +639,6 @@ const AddUser = async (userData: any) => {
   }
 };
 
-// Step 1: Verify current passcode only
-const VerifyCurrentPasscode = async (
-  userId: string,
-  currentPasscode: string
-) => {
-  try {
-    // Find user and include password field for verification
-    const user = await UserModel.findById(userId).select('+password');
-
-    if (!user) {
-      return {
-        success: false,
-        status: httpStatusConstant.NOT_FOUND,
-        response: {
-          message: "User not found"
-        }
-      };
-    }
-
-    // Verify current passcode
-    const isCurrentPasscodeValid = await user.comparePassword(currentPasscode);
-    if (!isCurrentPasscodeValid) {
-      return {
-        success: false,
-        status: httpStatusConstant.UNAUTHORIZED,
-        response: {
-          message: "Current passcode is incorrect"
-        }
-      };
-    }
-
-    return {
-      success: true,
-      status: httpStatusConstant.OK,
-      response: {
-        message: "Current passcode verified successfully"
-      }
-    };
-  } catch (error: any) {
-    console.error("Error in VerifyCurrentPasscode service:", error);
-    return {
-      success: false,
-      status: httpStatusConstant.INTERNAL_SERVER_ERROR,
-      response: {
-        message: "Failed to verify passcode",
-        error: error?.message || error
-      }
-    };
-  }
-};
-
-// Step 2: Change to new passcode (without verification)
-const ChangeUserPasscode = async (
-  userId: string,
-  newPasscode: string
-) => {
-  try {
-    // Find user and include password field to compare with new passcode
-    const user = await UserModel.findById(userId).select('+password');
-
-    if (!user) {
-      return {
-        success: false,
-        status: httpStatusConstant.NOT_FOUND,
-        response: {
-          message: "User not found"
-        }
-      };
-    }
-
-    // Check if new passcode is same as current passcode
-    const isSameAsCurrentPasscode = await user.comparePassword(newPasscode);
-    if (isSameAsCurrentPasscode) {
-      return {
-        success: false,
-        status: httpStatusConstant.BAD_REQUEST,
-        response: {
-          message: "New passcode cannot be the same as current passcode"
-        }
-      };
-    }
-
-    // Update password (will be hashed by pre-save middleware)
-    user.password = newPasscode;
-    await user.save();
-
-    return {
-      success: true,
-      status: httpStatusConstant.OK,
-      response: {
-        message: "Passcode changed successfully"
-      }
-    };
-  } catch (error: any) {
-    console.error("Error in ChangeUserPasscode service:", error);
-    return {
-      success: false,
-      status: httpStatusConstant.INTERNAL_SERVER_ERROR,
-      response: {
-        message: "Failed to change passcode",
-        error: error?.message || error
-      }
-    };
-  }
-};
-
-// Send OTP for passcode change
-const SendOTPForPasscodeChange = async (userId: string) => {
-  try {
-    // Find user by userId (not MongoDB _id)
-    const user = await UserModel.findOne({ userId });
-
-    if (!user) {
-      return {
-        success: false,
-        status: httpStatusConstant.NOT_FOUND,
-        response: {
-          message: "User not found"
-        }
-      };
-    }
-
-    if (!user.phone) {
-      return {
-        success: false,
-        status: httpStatusConstant.BAD_REQUEST,
-        response: {
-          message: "User does not have a phone number registered"
-        }
-      };
-    }
-
-    // Delete existing OTPs for this user's phone and PASSCODE_CHANGE purpose
-    await OTP.deleteMany({ identifier: user.phone, purpose: 'PASSCODE_CHANGE' });
-
-    // Generate new OTP
-    const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    // Send OTP via SMS
-    const smsResult = await sendSMS(
-      user.phone,
-      `Your OTP is ${otp}. Please use this to verify your account. -MithilaStack`
-    );
-
-    if (smsResult && !smsResult.success) {
-      console.error("Failed to send SMS:", smsResult.error);
-      return {
-        success: false,
-        status: httpStatusConstant.BAD_REQUEST,
-        response: {
-          message: "Failed to send OTP via SMS",
-          error: smsResult.error,
-        }
-      };
-    }
-
-    // Save OTP to database
-    const otpDoc = await OTP.create({
-      identifier: user.phone,
-      identifierType: 'phone',
-      otp,
-      purpose: 'PASSCODE_CHANGE',
-      expiresAt,
-    });
-
-    if (!otpDoc) {
-      return {
-        success: false,
-        status: httpStatusConstant.INTERNAL_SERVER_ERROR,
-        response: {
-          message: "Failed to create OTP record",
-        }
-      };
-    }
-
-    return {
-      success: true,
-      status: httpStatusConstant.OK,
-      response: {
-        message: `OTP sent successfully to ${user.phone}`,
-        data: {
-          phone: user.phone
-        }
-      }
-    };
-  } catch (error: any) {
-    console.error("Error in SendOTPForPasscodeChange service:", error);
-    return {
-      success: false,
-      status: httpStatusConstant.INTERNAL_SERVER_ERROR,
-      response: {
-        message: "Failed to send OTP",
-        error: error?.message || error
-      }
-    };
-  }
-};
-
-// Verify OTP for passcode change
-const VerifyOTPForPasscodeChange = async (userId: string, otp: string) => {
-  try {
-    // Find user by userId (not MongoDB _id)
-    const user = await UserModel.findOne({ userId });
-
-    if (!user) {
-      return {
-        success: false,
-        status: httpStatusConstant.NOT_FOUND,
-        response: {
-          message: "User not found"
-        }
-      };
-    }
-
-    if (!user.phone) {
-      return {
-        success: false,
-        status: httpStatusConstant.BAD_REQUEST,
-        response: {
-          message: "User does not have a phone number registered"
-        }
-      };
-    }
-
-    // Find OTP document
-    const otpDoc = await OTP.findOne({
-      identifier: user.phone,
-      otp,
-      purpose: 'PASSCODE_CHANGE',
-      isUsed: false,
-      expiresAt: { $gt: new Date() },
-    });
-
-    if (!otpDoc) {
-      return {
-        success: false,
-        status: httpStatusConstant.NOT_FOUND,
-        response: {
-          message: "Invalid or expired OTP"
-        }
-      };
-    }
-
-    if (otpDoc.attempts >= 3) {
-      return {
-        success: false,
-        status: httpStatusConstant.BAD_REQUEST,
-        response: {
-          message: "Maximum OTP attempts exceeded"
-        }
-      };
-    }
-
-    // Increment attempts and mark as used
-    otpDoc.attempts += 1;
-    otpDoc.isUsed = true;
-    await otpDoc.save();
-
-    return {
-      success: true,
-      status: httpStatusConstant.OK,
-      response: {
-        message: "OTP verified successfully"
-      }
-    };
-  } catch (error: any) {
-    console.error("Error in VerifyOTPForPasscodeChange service:", error);
-    return {
-      success: false,
-      status: httpStatusConstant.INTERNAL_SERVER_ERROR,
-      response: {
-        message: "Failed to verify OTP",
-        error: error?.message || error
-      }
-    };
-  }
-};
-
-// Change passcode with OTP verification only
-const ChangePasscodeWithVerification = async (
-  userId: string,
-  newPasscode: string,
-  otp: string
-) => {
-  try {
-    // Find user by userId (not MongoDB _id) and include password field
-    const user = await UserModel.findOne({ userId }).select('+password');
-
-    if (!user) {
-      return {
-        success: false,
-        status: httpStatusConstant.NOT_FOUND,
-        response: {
-          message: "User not found"
-        }
-      };
-    }
-
-    if (!user.phone) {
-      return {
-        success: false,
-        status: httpStatusConstant.BAD_REQUEST,
-        response: {
-          message: "User does not have a phone number registered"
-        }
-      };
-    }
-
-    // Verify OTP
-    const otpDoc = await OTP.findOne({
-      identifier: user.phone,
-      otp,
-      purpose: 'PASSCODE_CHANGE',
-      isUsed: true, // Should be already marked as used by VerifyOTPForPasscodeChange
-      expiresAt: { $gt: new Date() },
-    });
-
-    if (!otpDoc) {
-      return {
-        success: false,
-        status: httpStatusConstant.UNAUTHORIZED,
-        response: {
-          message: "Invalid or expired OTP. Please verify OTP first."
-        }
-      };
-    }
-
-    // Check if new passcode is same as current passcode
-    const isSameAsCurrentPasscode = await user.comparePassword(newPasscode);
-    if (isSameAsCurrentPasscode) {
-      return {
-        success: false,
-        status: httpStatusConstant.BAD_REQUEST,
-        response: {
-          message: "New passcode cannot be the same as current passcode"
-        }
-      };
-    }
-
-    // Update password (will be hashed by pre-save middleware)
-    user.password = newPasscode;
-    await user.save();
-
-    // Delete all OTPs for this user after successful passcode change
-    await OTP.deleteMany({ identifier: user.phone, purpose: 'PASSCODE_CHANGE' });
-
-    return {
-      success: true,
-      status: httpStatusConstant.OK,
-      response: {
-        message: "Passcode changed successfully"
-      }
-    };
-  } catch (error: any) {
-    console.error("Error in ChangePasscodeWithVerification service:", error);
-    return {
-      success: false,
-      status: httpStatusConstant.INTERNAL_SERVER_ERROR,
-      response: {
-        message: "Failed to change passcode",
-        error: error?.message || error
-      }
-    };
-  }
-};
 
 const GetUserCompactList = async ({
   limit = 25,
@@ -1256,13 +721,7 @@ const UsersService = {
   GetUserById,
   UpdateUserStatus,
   UpdateUserProfile,
-  UpdateNomineeDetails,
   AddUser,
-  VerifyCurrentPasscode,
-  ChangeUserPasscode,
-  SendOTPForPasscodeChange,
-  VerifyOTPForPasscodeChange,
-  ChangePasscodeWithVerification,
   GetUserCompactList,
 };
 

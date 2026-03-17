@@ -5,10 +5,7 @@ import {
     GetUserProfile,
     UpdateUserStatus,
     AddUser,
-    VerifyCurrentPasscode,
-    ChangeUserPasscode,
     UpdateProfile,
-    ChangePasscodeWithVerification,
     GetUserList
 } from "../../controller/users/users.controller";
 
@@ -66,17 +63,6 @@ Router.get("/profile/:id", userAndIpRateLimiter, verifyToken, GetUserProfile);
 // PATCH /users/update/:id?profile=allDetails - update user personal info (name, email, phone, status, currentEarning, dateOfBirth, fatherName, city, pinCode, houseNo, street, landmark, profileImage[optional])
 Router.patch("/update/:id", userAndIpRateLimiter, verifyToken, upload.single('profileImage'), handleMulterError, UpdateUserStatus);
 
-
-// PATCH /users/:id/verify-passcode - Step 1: Verify current passcode (body: { currentPasscode })
-Router.patch("/:id/verify-passcode", userAndIpRateLimiter, verifyToken, VerifyCurrentPasscode);
-
-// PATCH /users/:id/change-passcode - Step 2: Change to new passcode (body: { newPasscode })
-Router.patch("/:id/change-passcode", userAndIpRateLimiter, verifyToken, ChangeUserPasscode);
-
-// PATCH /users/:id/change-passcode-verified - Change passcode with OTP verification (body: { otp, newPasscode })
-// Flow: 1. Send OTP -> 2. Verify OTP -> 3. Change passcode with verified OTP
-// Example: { "otp": "123456", "newPasscode": "1234" }
-Router.patch("/:id/change-passcode-verified", generalRateLimiter, verifyToken, ChangePasscodeWithVerification);
 
 // This API for App User to Update Profile
 // PATCH /users/:id/profile - update user profile details (username, email, dob)

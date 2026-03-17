@@ -1,5 +1,5 @@
 const { randomUUID } = require('crypto');
-import { Roles } from '../types/enums/user.enums';
+import { Roles } from '../enums/user.enums';
 
 // Use Node.js built-in UUID function
 const uuidv4 = randomUUID;

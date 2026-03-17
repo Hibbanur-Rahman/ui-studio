@@ -292,57 +292,6 @@ const UpdateUserStatus = async (
   }
 };
 
-interface UpdateNomineeBody {
-  name?: string;
-  relation?: string;
-  phoneNumber?: string;
-  isVerified?: boolean;
-}
-
-const UpdateNomineeDetails = async (
-  req: AuthRequest & Request<{ id: string }, unknown, UpdateNomineeBody>,
-  res: Response<ErrorResponse | SuccessResponse>
-): Promise<Response<ErrorResponse | SuccessResponse> | void> => {
-  try {
-    const { id } = req.params;
-    const { name, relation, phoneNumber, isVerified } = req.body;
-
-    if (!id) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "User id is required",
-      });
-    }
-
-    const updatePayload: UpdateNomineeBody = {};
-
-    if (name !== undefined) updatePayload.name = name;
-    if (relation !== undefined) updatePayload.relation = relation;
-    if (phoneNumber !== undefined) updatePayload.phoneNumber = phoneNumber;
-    if (isVerified !== undefined) updatePayload.isVerified = isVerified;
-
-    if (Object.keys(updatePayload).length === 0) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "At least one nominee field is required to update",
-      });
-    }
-
-    const result = await UsersService.UpdateNomineeDetails(id, updatePayload);
-
-    return res
-      .status(result.status)
-      .json({ success: result.success, ...result.response });
-  } catch (error: any) {
-    console.log("error while updating nominee details:", error);
-    return res.status(httpStatusConstant.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      error: error?.message,
-      message: "something went wrong",
-    });
-  }
-};
-
 // Add new user
 const AddUser = async (
   req: Request,
@@ -425,98 +374,6 @@ const AddUser = async (
   }
 };
 
-// Step 1: Verify current passcode
-const VerifyCurrentPasscode = async (
-  req: Request<{ id: string }, unknown, { currentPasscode: string }>,
-  res: Response<ErrorResponse | SuccessResponse>
-): Promise<Response<ErrorResponse | SuccessResponse> | void> => {
-  try {
-    const { id } = req.params;
-    const { currentPasscode } = req.body;
-
-    if (!id) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "User id is required"
-      });
-    }
-
-    if (!currentPasscode) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "Current passcode is required"
-      });
-    }
-
-    // Validate passcode format (must be 4 digits)
-    if (!/^\d{4}$/.test(currentPasscode)) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "Passcode must be exactly 4 digits"
-      });
-    }
-
-    const result = await UsersService.VerifyCurrentPasscode(id, currentPasscode);
-
-    return res
-      .status(result.status)
-      .json({ success: result.success, ...result.response });
-  } catch (error: any) {
-    console.log("error while verifying passcode:", error);
-    return res.status(httpStatusConstant.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      error: error?.message,
-      message: "something went wrong"
-    });
-  }
-};
-
-// Step 2: Change to new passcode
-const ChangeUserPasscode = async (
-  req: Request<{ id: string }, unknown, { newPasscode: string }>,
-  res: Response<ErrorResponse | SuccessResponse>
-): Promise<Response<ErrorResponse | SuccessResponse> | void> => {
-  try {
-    const { id } = req.params;
-    const { newPasscode } = req.body;
-
-    if (!id) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "User id is required"
-      });
-    }
-
-    if (!newPasscode) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "New passcode is required"
-      });
-    }
-
-    // Validate new passcode format (must be 4 digits)
-    if (!/^\d{4}$/.test(newPasscode)) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "New passcode must be exactly 4 digits"
-      });
-    }
-
-    const result = await UsersService.ChangeUserPasscode(id, newPasscode);
-
-    return res
-      .status(result.status)
-      .json({ success: result.success, ...result.response });
-  } catch (error: any) {
-    console.log("error while changing passcode:", error);
-    return res.status(httpStatusConstant.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      error: error?.message,
-      message: "something went wrong"
-    });
-  }
-};
-
 // New API to update profile details or upload photo
 const UpdateProfile = async (
   req: AuthRequest & Request<{ id: string }, unknown, UpdateUserProfileBody, { photo?: string }>,
@@ -581,146 +438,9 @@ const UpdateProfile = async (
   }
 };
 
-// Send OTP for passcode change
-const SendOTPForPasscodeChange = async (
-  req: Request<{ id: string }>,
-  res: Response<ErrorResponse | SuccessResponse>
-): Promise<Response<ErrorResponse | SuccessResponse> | void> => {
-  try {
-    const { id } = req.params;
 
-    if (!id) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "User id is required"
-      });
-    }
 
-    const result = await UsersService.SendOTPForPasscodeChange(id);
 
-    return res
-      .status(result.status)
-      .json({ success: result.success, ...result.response });
-  } catch (error: any) {
-    console.log("error while sending OTP for passcode change:", error);
-    return res.status(httpStatusConstant.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      error: error?.message,
-      message: "something went wrong"
-    });
-  }
-};
-
-// Verify OTP for passcode change
-const VerifyOTPForPasscodeChange = async (
-  req: Request<{ id: string }, unknown, { otp: string }>,
-  res: Response<ErrorResponse | SuccessResponse>
-): Promise<Response<ErrorResponse | SuccessResponse> | void> => {
-  try {
-    const { id } = req.params;
-    const { otp } = req.body;
-
-    if (!id) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "User id is required"
-      });
-    }
-
-    if (!otp) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "OTP is required"
-      });
-    }
-
-    // Validate OTP format (must be 6 digits)
-    if (!/^\d{6}$/.test(otp)) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "OTP must be exactly 6 digits"
-      });
-    }
-
-    const result = await UsersService.VerifyOTPForPasscodeChange(id, otp);
-
-    return res
-      .status(result.status)
-      .json({ success: result.success, ...result.response });
-  } catch (error: any) {
-    console.log("error while verifying OTP for passcode change:", error);
-    return res.status(httpStatusConstant.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      error: error?.message,
-      message: "something went wrong"
-    });
-  }
-};
-
-// Change passcode with OTP verification
-const ChangePasscodeWithVerification = async (
-  req: Request<{ id: string }, unknown, { otp: string; newPasscode: string }>,
-  res: Response<ErrorResponse | SuccessResponse>
-): Promise<Response<ErrorResponse | SuccessResponse> | void> => {
-  try {
-    const { id } = req.params;
-    const { otp, newPasscode } = req.body;
-
-    if (!id) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "User id is required"
-      });
-    }
-
-    if (!newPasscode) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "New passcode is required"
-      });
-    }
-
-    // Validate new passcode format (must be 4 digits)
-    if (!/^\d{4}$/.test(newPasscode)) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "New passcode must be exactly 4 digits"
-      });
-    }
-
-    if (!otp) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "OTP is required"
-      });
-    }
-
-    // Validate OTP format (must be 6 digits)
-    if (!/^\d{6}$/.test(otp)) {
-      return res.status(httpStatusConstant.BAD_REQUEST).json({
-        success: false,
-        message: "OTP must be exactly 6 digits"
-      });
-    }
-
-    const result = await UsersService.ChangePasscodeWithVerification(
-      id,
-      newPasscode,
-      otp
-    );
-
-    return res
-      .status(result.status)
-      .json({ success: result.success, ...result.response });
-  } catch (error: any) {
-    console.log("error while changing passcode:", error);
-    return res.status(httpStatusConstant.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      error: error?.message,
-      message: "something went wrong"
-    });
-  }
-};
 
 const GetUserList = async (
   req: Request,
@@ -763,13 +483,7 @@ export {
   GetUsers,
   GetUserProfile,
   UpdateUserStatus,
-  UpdateNomineeDetails,
   AddUser,
-  VerifyCurrentPasscode,
-  ChangeUserPasscode,
   UpdateProfile,
-  SendOTPForPasscodeChange,
-  VerifyOTPForPasscodeChange,
-  ChangePasscodeWithVerification,
   GetUserList
 };

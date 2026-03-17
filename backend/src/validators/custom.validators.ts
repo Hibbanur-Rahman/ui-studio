@@ -2,7 +2,7 @@ import { CustomValidator } from 'express-validator';
 
 // Custom validator for checking if email already exists
 export const isEmailAvailable: CustomValidator = async (email: string) => {
-  const BaseUserModel = (await import('../models/users/base.user.model')).default;
+  const BaseUserModel = (await import('../models/user/base.user.model')).default;
   const user = await BaseUserModel.findOne({ email, isDeleted: false });
   if (user) {
     throw new Error('Email already exists');
@@ -12,7 +12,7 @@ export const isEmailAvailable: CustomValidator = async (email: string) => {
 
 // Custom validator for checking if phone already exists
 export const isPhoneAvailable: CustomValidator = async (phone: string) => {
-  const BaseUserModel = (await import('../models/users/base.user.model')).default;
+  const BaseUserModel = (await import('../models/user/base.user.model')).default;
   const user = await BaseUserModel.findOne({ phone, isDeleted: false });
   if (user) {
     throw new Error('Phone number already exists');
@@ -22,7 +22,7 @@ export const isPhoneAvailable: CustomValidator = async (phone: string) => {
 
 // Custom validator for checking if username already exists
 export const isUsernameAvailable: CustomValidator = async (username: string) => {
-  const BaseUserModel = (await import('../models/users/base.user.model')).default;
+  const BaseUserModel = (await import('../models/user/base.user.model')).default;
   const user = await BaseUserModel.findOne({ username, isDeleted: false });
   if (user) {
     throw new Error('Username already exists');
