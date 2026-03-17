@@ -3,7 +3,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import * as dotenv from "dotenv";
-import mainRoutes from "./routes/main.routes";
+import mainRoutes from "./routes/main.route";
 import dbConnection from "./config/db.config";
 import swaggerMiddleware from "./middleware/swagger.middleware";
 import { apiLoggerMiddleware } from "./middleware/apiLogger.middleware";
@@ -11,9 +11,7 @@ import http from "http";
 import { initializeSocket } from "./socket/index";
 import winston from "winston";
 import AuthService from "./services/auth/auth.service";
-import { modelAnalyzer } from "mongodb-models-visualizer";
-import mongoose from "mongoose";
-import { startDailyRentalDeductionCron } from "./scripts/rentalDeductionCron";
+
 import httpStatusConstant from "./constant/httpStatus.constant";
 
 dotenv.config();
@@ -125,27 +123,17 @@ app.get("/health", (req, res) => {
 // Root endpoint
 app.get("/", (req, res) => {
   res.json({
-    message: "Vertev Backend API",
+    message: "Ui-studio Backend API",
     swagger: "/api-docs",
     health: "/health",
   });
 });
-
-// app.use(
-//   "/visualizer",
-//   modelAnalyzer({
-//     mongoose,
-//   }),
-// );
 
 // Routes
 app.use("/api", mainRoutes);
 
 //seeding default admin user
 AuthService.CreateDefaultAdmin();
-
-//cron job for rental deductions
-startDailyRentalDeductionCron();
 
 const port = PORT || 5000;
 
