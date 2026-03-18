@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useContext } from "react";
 import { useDispatch } from "react-redux";
-import socketService from "./socketService";
+import socketService from "./socket.service";
 
 const SocketContext = createContext();
 export const useSocket = () => {
