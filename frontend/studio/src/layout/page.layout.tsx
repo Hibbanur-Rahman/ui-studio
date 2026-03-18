@@ -4,12 +4,26 @@ import Login from "@/views/pages/auth/login";
 import Register from "@/views/pages/auth/register";
 import Home from "@/views/pages/home/home";
 import NotFoundPage from "@/views/pages/notFoundPage/notFoundPage";
-import { Route, Routes } from "react-router-dom";
+import { useEffect, useState } from "react";
+
+import { Route, Routes, useNavigate } from "react-router-dom";
 
 const PageLayout = () => {
+  const navigate = useNavigate();
+  const [hideNavbar, setHideNavbar] = useState(false);
+  useEffect(() => {
+    if (
+      window.location.pathname === "/login" ||
+      window.location.pathname === "/register"
+    ) {
+      setHideNavbar(true);
+    } else {
+      setHideNavbar(false);
+    }
+  }, [navigate]);
   return (
-    <>
-      <Navbar/>
+    <div className="flex min-h-screen flex-col">
+      {!hideNavbar && <Navbar />}
       <div>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -18,8 +32,8 @@ const PageLayout = () => {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
-      <Footer/>
-    </>
+      {!hideNavbar && <Footer />}
+    </div>
   );
 };
 

@@ -20,7 +20,7 @@ const App = () => {
   }, [user]);
 
   return (
-    <div className="w-full">
+    <div className="w-full min-h-screen">
       <Routes>
         <Route path="/dashboard/*" element={<DashboardLayout />} />
         <Route path="/*" element={<PageLayout />} />
