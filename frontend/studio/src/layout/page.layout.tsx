@@ -1,6 +1,7 @@
 import Footer from "@/components/footer";
 import Navbar from "@/components/navbar";
 import Login from "@/views/pages/auth/login";
+import Register from "@/views/pages/auth/register";
 import Home from "@/views/pages/home/home";
 import NotFoundPage from "@/views/pages/notFoundPage/notFoundPage";
 import { Route, Routes } from "react-router-dom";
@@ -13,6 +14,7 @@ const PageLayout = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>

@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import Logo from "@/assets/images/logo-white.png";
 import {
@@ -172,8 +172,10 @@ const triggerCls =
 /* ─── Navbar ──────────────────────────────────────────────────────────── */
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [openMobileSection, setOpenMobileSection] = useState<DesktopMenuKey | null>(null);
+  const [openMobileSection, setOpenMobileSection] =
+    useState<DesktopMenuKey | null>(null);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -207,7 +209,9 @@ const Navbar = () => {
             <NavigationMenuList>
               {/* Product */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className={triggerCls}>Product</NavigationMenuTrigger>
+                <NavigationMenuTrigger className={triggerCls}>
+                  Product
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="w-[360px] space-y-0.5 p-1">
                     {productItems.map((item) => (
@@ -219,7 +223,9 @@ const Navbar = () => {
 
               {/* Solutions */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className={triggerCls}>Solutions</NavigationMenuTrigger>
+                <NavigationMenuTrigger className={triggerCls}>
+                  Solutions
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid w-[460px] grid-cols-2 gap-0.5 p-1">
                     {solutionItems.map((item) => (
@@ -241,7 +247,9 @@ const Navbar = () => {
 
               {/* Resources */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className={triggerCls}>Resources</NavigationMenuTrigger>
+                <NavigationMenuTrigger className={triggerCls}>
+                  Resources
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="grid w-[680px] grid-cols-2 gap-6 p-3">
                     {resourceGroups.map((group) => (
@@ -287,12 +295,14 @@ const Navbar = () => {
         <div className="hidden items-center gap-2 lg:flex">
           <button
             type="button"
+            onClick={() => navigate('/login')}
             className="rounded-full px-4 py-2 text-[14px] font-medium text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900"
           >
             Sign In
           </button>
           <button
             type="button"
+             onClick={() => navigate('/register')}
             className="rounded-full bg-slate-950 px-5 py-2 text-[14px] font-semibold text-white shadow-sm transition-all duration-150 hover:bg-slate-800 hover:shadow-md active:scale-[0.98]"
           >
             Get Started
@@ -307,7 +317,11 @@ const Navbar = () => {
           aria-label="Toggle navigation menu"
           aria-expanded={isMobileOpen}
         >
-          {isMobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          {isMobileOpen ? (
+            <X className="size-5" />
+          ) : (
+            <Menu className="size-5" />
+          )}
         </button>
       </nav>
 
@@ -339,12 +353,14 @@ const Navbar = () => {
             <div className="grid grid-cols-2 gap-2.5 pt-3">
               <button
                 type="button"
+                 onClick={() => navigate('/login')}
                 className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
               >
                 Sign In
               </button>
               <button
                 type="button"
+                 onClick={() => navigate('/register')}
                 className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
               >
                 Get Started
@@ -374,7 +390,9 @@ const MenuListItem = ({ item }: { item: MenuEntry }) => (
         <item.icon className="size-4" />
       </span>
       <span>
-        <span className="block text-[13px] font-semibold text-slate-900">{item.title}</span>
+        <span className="block text-[13px] font-semibold text-slate-900">
+          {item.title}
+        </span>
         <span className="mt-0.5 block text-xs leading-snug text-slate-500">
           {item.description}
         </span>
@@ -392,7 +410,12 @@ type MobileSectionProps = {
   items: MenuEntry[];
 };
 
-const MobileSection = ({ label, open, onToggle, items }: MobileSectionProps) => (
+const MobileSection = ({
+  label,
+  open,
+  onToggle,
+  items,
+}: MobileSectionProps) => (
   <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50/50">
     <button
       type="button"
@@ -478,7 +501,9 @@ const MobileMenuList = ({ items }: { items: MenuEntry[] }) => (
             <item.icon className="size-4" />
           </span>
           <span>
-            <span className="block text-[13px] font-semibold text-slate-900">{item.title}</span>
+            <span className="block text-[13px] font-semibold text-slate-900">
+              {item.title}
+            </span>
             <span className="mt-0.5 block text-xs leading-snug text-slate-500">
               {item.description}
             </span>
